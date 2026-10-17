@@ -30,14 +30,14 @@ struct OceanData
 };
 
 // void __usercall(int a1@<eax>, int a2)
-static const void *const njColorBlendingModePtr = (void*)0x426420;
-static inline void njColorBlendingMode(int a1, int a2)
+static const void *const ecColorBlendingModePtr = (void*)0x426420;
+static inline void ecColorBlendingMode(int a1, int a2)
 {
 	__asm
 	{
 		push[a2]
 		mov eax, [a1]
-		call njColorBlendingModePtr
+		call ecColorBlendingModePtr
 		add esp, 4
 	}
 }
@@ -85,7 +85,6 @@ static inline void sub_41B1F0(int a1)
 
 VoidFunc(sub_4293B0, 0x4293B0);
 VoidFunc(sub_4292E0, 0x4292E0);
-FastcallFunctionPointer(double, njSin, (int a1), 0x42AAB0);
 void __cdecl EmeraldCoast_OceanDraw(OceanData *o)
 {
 	char v2; // al
@@ -121,7 +120,7 @@ void __cdecl EmeraldCoast_OceanDraw(OceanData *o)
 	njPushMatrix(0);
 	xb = _f * 0.5;
 	njTranslate(_nj_current_matrix_ptr_, (float)xb, -1.0, (float)xb);
-	njSetTextureNum((char)word_7EC250[o->TextureIndex]);
+	ecSetTextureNum((char)word_7EC250[o->TextureIndex]);
 	v7 = 0;
 	if (o->PlaneCount)
 	{
@@ -140,7 +139,7 @@ void __cdecl EmeraldCoast_OceanDraw(OceanData *o)
 	}
 	njPopMatrix(1u);
 	njPushMatrix(0);
-	njSetTextureNum((o->VBuffIndex & 1) + 15);
+	ecSetTextureNum((o->VBuffIndex & 1) + 15);
 	v8 = 0;
 	if (o->PlaneCount)
 	{
@@ -165,8 +164,8 @@ void __cdecl Obj_EC1Water_Display(ObjectMaster *obj)
 {
 	//Direct3D_SetZFunc(3u);
 	//Direct3D_EnableZWrite(0);
-	njColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
-	njColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_ONE);
+	ecColorBlendingMode(NJD_SOURCE_COLOR, NJD_COLOR_BLENDING_SRCALPHA);
+	ecColorBlendingMode(NJD_DESTINATION_COLOR, NJD_COLOR_BLENDING_ONE);
 	RenderInfo->CurrentTexlist = &BEACH_SEA_TEXLIST;
 	//SetOceanAlphaModeAndFVF(1);
 	for (int i = 0; i < 4; i++)
@@ -208,7 +207,7 @@ void __cdecl Background_Display(ObjectMaster *obj)
 			njPushMatrix(0);
 			njTranslate(_nj_current_matrix_ptr_, v2->x, 0.0, v2->z);
 			RenderInfo->CurrentTexlist = &BG_BEACH_TEXLIST;
-			njScale(1.45f, 1.23f, 1.11f);
+			njScale_(1.45f, 1.23f, 1.11f);
 			sub_42E730(stru_103B270);
 			sub_42E730(stru_103B37C);
 			njPopMatrix(1u);
@@ -236,7 +235,7 @@ void __cdecl Background_Display(ObjectMaster *obj)
 			njPushMatrix(0);
 			njTranslate(_nj_current_matrix_ptr_, v2->x, 0.0, v2->z);
 			RenderInfo->CurrentTexlist = &BG_BEACH_TEXLIST;
-			njScale(1.3f, 1.3f, 1.3f);
+			njScale_(1.3f, 1.3f, 1.3f);
 			sub_42E730(stru_103B270);
 			sub_42E730(stru_103B37C);
 			njPopMatrix(1u);

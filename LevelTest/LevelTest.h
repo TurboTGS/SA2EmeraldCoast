@@ -30,7 +30,7 @@ DataPointer(RenderInfoThing *, RenderInfo, 0x2670544);
 
 FunctionPointer(void, sub_42E730, (NJS_OBJECT *), 0x42E730);
 
-static inline void njSetTextureNum(int texid)
+static inline void ecSetTextureNum(int texid)
 {
 	NJS_TEXMEMLIST *tex = (NJS_TEXMEMLIST*)RenderInfo->CurrentTexlist->textures[texid].texaddr;
 	RenderInfo->texparplus4 = tex->texparambuffer + 4;
