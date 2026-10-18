@@ -4,8 +4,10 @@
 // (SA2_1P_in_2P) installed it registers as its own 2P stage instead: its
 // patches and file replacements are applied only while an Emerald Coast match
 // is played (Apply / Revert below), so City Escape stays City Escape
-// everywhere else. Without the 2P mod it applies them permanently on the
-// first frame, as before.
+// everywhere else. With 2P stage API 3 it also gets its own level ID (96): it
+// still runs City Escape's level code (patched), but its set and camera files
+// and its positions belong to level 96. Without the 2P mod it applies
+// everything permanently to level 13 on the first frame, as before.
 
 #include "stdafx.h"
 #include "LevelTest.h"
@@ -456,9 +458,19 @@ static void RestoreAllPatches()
 // Replacements for level 13 live in <mod>\stage13\ (same layout as gd_PC),
 // not in gd_PC, so the mod loader doesn't apply them globally at start-up.
 
+// The level Emerald Coast is played on: City Escape's 13, or its own ID when
+// the 2P mod gave it one.
+static const int kEmeraldCoastLevelId = 96;
+static int stageLevel = LevelIDs_CityEscape;
+
+// Files the game names after the level ID (stored under the level-13 names).
+static const char *const levelFiles[] = {
+	"set%04d_2p_s.bin", "set%04d_2p_u.bin", "set%04d_s.bin", "set%04d_u.bin",
+	"stg%02dcam.prs",
+};
+
+// Files City Escape's level code loads by name.
 static const char *const stageFiles[] = {
-	"set0013_2p_s.bin", "set0013_2p_u.bin", "set0013_s.bin", "set0013_u.bin",
-	"stg13cam.prs",
 	"MLT\\se_ac_ce\\7.csb",
 	"Message\\missione.prs",
 	"PRS\\beach01.pak", "PRS\\beach_sea.pak", "PRS\\bg_beach.pak",
@@ -473,8 +485,18 @@ static std::string GamePath(const char *file)
 	return std::string("resource\\gd_PC\\") + file;
 }
 
+static std::string LevelFileName(const char *format, int level)
+{
+	char name[64];
+	snprintf(name, sizeof(name), format, level);
+	return name;
+}
+
 static void ReplaceStageFiles()
 {
+	for (const char *format : levelFiles)
+		helpers->ReplaceFile(GamePath(LevelFileName(format, stageLevel).c_str()).c_str(),
+			(modPath + "\\stage13\\" + LevelFileName(format, LevelIDs_CityEscape)).c_str());
 	for (const char *file : stageFiles)
 		helpers->ReplaceFile(GamePath(file).c_str(), (modPath + "\\stage13\\" + file).c_str());
 }
@@ -483,6 +505,8 @@ static void UnreplaceStageFiles()
 {
 	if (helpers->Version < 12)
 		return;
+	for (const char *format : levelFiles)
+		helpers->UnreplaceFile(GamePath(LevelFileName(format, stageLevel).c_str()).c_str());
 	for (const char *file : stageFiles)
 	{
 		std::string path = GamePath(file);
@@ -643,7 +667,9 @@ static void Apply()
 	PatchData((NJS_TEXLIST***)0x109E748, static_cast<NJS_TEXLIST**>(objtexlists));
 	PatchCall((void*)0x5DD360, DeInitHook);
 	PatchCall((void*)0x5DD22F, LoadDryLagoon2PCharAnims);
-	RegisterEmeraldCoastPositions();
+	// On its own level ID the 2P mod registers the positions (descriptor).
+	if (stageLevel == LevelIDs_CityEscape)
+		RegisterEmeraldCoastPositions();
 	ReplaceStageFiles();
 }
 
@@ -654,7 +680,8 @@ static void Revert()
 		return;
 	applied = false;
 	RestoreAllPatches();
-	RegisterStockPositions();
+	if (stageLevel == LevelIDs_CityEscape)
+		RegisterStockPositions();
 	UnreplaceStageFiles();
 }
 
@@ -681,6 +708,26 @@ extern "C"
 		d.hostLevel = LevelIDs_CityEscape;
 		d.activate = Activate2P;
 		d.deactivate = Deactivate2P;
+		if (api->version >= 3)
+		{
+			// Own level ID: City Escape's (patched) code with level 96's files
+			// and positions. The 2P mod registers the positions for level 96.
+			d.levelId = kEmeraldCoastLevelId;
+			d.startPosition = &startpos;
+			d.endPosition = &endpos;
+			d.intro2P = &_2pintro;
+			d.end23 = &endpos23;
+			if (api->AddStage(&d))
+			{
+				stageLevel = kEmeraldCoastLevelId;
+				registeredWith2P = true;
+				return;
+			}
+			// ID taken or custom level IDs off: borrow level 13 instead.
+			d.levelId = 0;
+			d.startPosition = d.endPosition = nullptr;
+			d.intro2P = d.end23 = nullptr;
+		}
 		registeredWith2P = api->AddStage(&d) != 0;
 	}
 
