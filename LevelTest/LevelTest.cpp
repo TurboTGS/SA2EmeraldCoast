@@ -474,8 +474,16 @@ static const char *const stageFiles[] = {
 	"MLT\\se_ac_ce\\7.csb",
 	"Message\\missione.prs",
 	"PRS\\beach01.pak", "PRS\\beach_sea.pak", "PRS\\bg_beach.pak",
-	"PRS\\stageMap.pak", "PRS\\stg_title13.pak",
+	"PRS\\stg_title13.pak",
 };
+
+// The Stage Select's textures (City Escape's entry on the map shown as
+// Emerald Coast). Only while Emerald Coast replaces City Escape (level 13;
+// on its own level ID it isn't on the map), and only if no other mod
+// replaces the file: Character Select Plus's has extra character icons, and
+// after the stock-sized one is loaded they point at freed textures (its
+// character menu crashed).
+static const char *const stageMapFile = "PRS\\stageMap.pak";
 
 static std::string modPath;
 static const HelperFunctions *helpers = nullptr;
@@ -492,24 +500,58 @@ static std::string LevelFileName(const char *format, int level)
 	return name;
 }
 
+// The file another mod replaces the path with, or null. GetReplaceablePath
+// returns its argument when nothing replaces the path.
+static const char *OtherReplacement(const std::string &path)
+{
+	const char *current = helpers->GetReplaceablePath(path.c_str());
+	if (current && current != path.c_str() && _stricmp(current, path.c_str()) != 0)
+		return current;
+	return nullptr;
+}
+
+// A file swapped in, and the replacement it covered: another mod's file is
+// put back afterwards (UnreplaceFile alone removes every replacement).
+struct SwappedFile
+{
+	std::string path;
+	std::string previous; // empty = none
+	int previousIndex;
+};
+static std::vector<SwappedFile> swappedFiles;
+
+static void SwapIn(const std::string &path, const std::string &file)
+{
+	SwappedFile f = { path, std::string(), -1 };
+	if (const char *previous = OtherReplacement(path))
+	{
+		f.previous = previous;
+		if (helpers->Version >= 16)
+			f.previousIndex = helpers->GetFileModIndex(path.c_str());
+	}
+	helpers->ReplaceFile(path.c_str(), file.c_str());
+	swappedFiles.push_back(f);
+}
+
 static void ReplaceStageFiles()
 {
+	swappedFiles.clear();
 	for (const char *format : levelFiles)
-		helpers->ReplaceFile(GamePath(LevelFileName(format, stageLevel).c_str()).c_str(),
-			(modPath + "\\stage13\\" + LevelFileName(format, LevelIDs_CityEscape)).c_str());
+		SwapIn(GamePath(LevelFileName(format, stageLevel).c_str()),
+			modPath + "\\stage13\\" + LevelFileName(format, LevelIDs_CityEscape));
 	for (const char *file : stageFiles)
-		helpers->ReplaceFile(GamePath(file).c_str(), (modPath + "\\stage13\\" + file).c_str());
+		SwapIn(GamePath(file), modPath + "\\stage13\\" + file);
+	if (stageLevel == LevelIDs_CityEscape && !OtherReplacement(GamePath(stageMapFile)))
+		SwapIn(GamePath(stageMapFile), modPath + "\\stage13\\" + stageMapFile);
 }
 
 static void UnreplaceStageFiles()
 {
 	if (helpers->Version < 12)
 		return;
-	for (const char *format : levelFiles)
-		helpers->UnreplaceFile(GamePath(LevelFileName(format, stageLevel).c_str()).c_str());
-	for (const char *file : stageFiles)
+	for (const SwappedFile &f : swappedFiles)
 	{
-		std::string path = GamePath(file);
+		std::string path = f.path;
 		helpers->UnreplaceFile(path.c_str());
 		// ReplaceFile also maps "gd_PC\PRS\x.pak" to "gd_PC\x.prs"; undo that too.
 		size_t prs = path.find("\\PRS\\");
@@ -519,7 +561,14 @@ static void UnreplaceStageFiles()
 			path.replace(path.size() - 4, 4, ".prs");
 			helpers->UnreplaceFile(path.c_str());
 		}
+		if (f.previous.empty())
+			continue;
+		if (f.previousIndex >= 0)
+			helpers->ReplaceFileAtIndex(f.path.c_str(), f.previous.c_str(), f.previousIndex);
+		else
+			helpers->ReplaceFile(f.path.c_str(), f.previous.c_str());
 	}
+	swappedFiles.clear();
 }
 
 // ---- Positions ----------------------------------------------------------------
