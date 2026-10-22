@@ -713,6 +713,17 @@ extern "C"
 		// need level data of their own.
 		d.character = Characters_Sonic;
 		d.missions = 2;
+		// API v6: rank requirements for D, C, B, A (example values).
+		// A short level: lower than City Escape's.
+		// Mission 1: least points (score + time bonus).
+		// Mission 2 (100 rings): slowest time in seconds.
+		const int m1[4] = { 5000, 8000, 11000, 14000 };
+		const int m2[4] = { 270, 210, 165, 130 }; // 4:30, 3:30, 2:45, 2:10
+		for (int k = 0; k < 4; ++k)
+		{
+			d.rankRequirements[0][k] = m1[k];
+			d.rankRequirements[1][k] = m2[k];
+		}
 		if (api->version >= 3)
 		{
 			// Own level ID: City Escape's (patched) code with level 96's files
