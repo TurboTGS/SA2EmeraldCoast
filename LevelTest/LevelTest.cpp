@@ -708,6 +708,11 @@ extern "C"
 		d.hostLevel = LevelIDs_CityEscape;
 		d.activate = Activate2P;
 		d.deactivate = Deactivate2P;
+		// API v4: the 1P Stage Select's Custom page. Missions 1 (goal) and 2
+		// (100 rings) work as they are; 3 (lost Chao) and 4 (time limit) would
+		// need level data of their own.
+		d.character = Characters_Sonic;
+		d.missions = 2;
 		if (api->version >= 3)
 		{
 			// Own level ID: City Escape's (patched) code with level 96's files

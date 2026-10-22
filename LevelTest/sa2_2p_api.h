@@ -1,5 +1,5 @@
 /*
- * SA2 2P stage API (SA2_1P_in_2P mod), version 3.
+ * SA2 2P stage API (SA2_1P_in_2P mod), version 4.
  *
  * Lets a level mod add its level to the 2P battle stage select WITHOUT
  * replacing a stock level and without being bundled with the 2P mod. A mod
@@ -38,6 +38,8 @@
  *       d.filesDir = "<your mod folder>\\stage14";
  *       d.startPosition = &myStart;  d.intro2P = &my2PIntro;  // optional
  *       d.activate = MyApply;        d.deactivate = MyRevert; // optional
+ *       d.character = 0;             // v4: 1P Stage Select character (Sonic)
+ *       d.missions = 1;              // v4: 1P missions (0 = none)
  *       api->AddStage(&d);
  *   }
  *
@@ -57,7 +59,7 @@
 #ifndef SA2_2P_API_H
 #define SA2_2P_API_H
 
-#define SA2TP_API_VERSION 3
+#define SA2TP_API_VERSION 4
 
 /* Level IDs a stage can claim with levelId (version 3). Pick one and keep it:
    your file names depend on it. Taken IDs are rejected. */
@@ -124,6 +126,19 @@ typedef struct SA2TP_StageDesc {
     /* Your own level module for levelId (Name, Init, Free, Main), or NULL to
        run hostLevel's stock module. */
     const struct LevelHeader* levelHeader;
+
+    /* ---- version 4: the 1P Stage Select's Custom page ---- */
+    /* The character it's played as from the 1P Stage Select (Characters_*:
+       0 Sonic, 1 Shadow, 2 Tails, 3 Eggman, 4 Knuckles, 5 Rouge), or -1 for
+       the host level's Stage Select character. Its icon is shown on the
+       stage's row. Descriptors older than version 4: -1. */
+    int character;
+    /* How many 1P missions the stage has (0..5). 0: no mission boxes on its
+       row, picking it starts mission 1. 1..5: missions 1..n can be picked
+       (MissionNum 0..n-1); make sure your level handles them (mission 2:
+       100 rings, 3: the lost Chao, 4: time limit, 5: hard mode). Descriptors
+       older than version 4: 0. */
+    int missions;
 } SA2TP_StageDesc;
 
 typedef struct SA2TP_API {
