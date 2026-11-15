@@ -60,6 +60,9 @@ static const char *const kSadxPorts[] = {
 	"E SAITO",  // 109 Rhinotank (was E EMI)
 	"E AMEMB",  // 110 Sweep (was a Beetle)
 	"O AXPNL",  // 111 dash panel (was SA2's)
+	"O AO SUMMON", // 112 the chasing orca's trigger (was left out)
+	"O AO KILL",   // 113 sends it away (was left out)
+	"O PO SUMMON", // 114 the path orca's trigger (was left out)
 };
 static const int kCityEscapeObjectCount = 102;
 

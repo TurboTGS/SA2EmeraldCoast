@@ -13,7 +13,8 @@ dist/stage13_sadx/set0013_s.bin and set0013_2p_s.bin:
   few were moved by hand, e.g. a Rhinotank lowered by 8).
 - SADX objects SetConv dropped for lack of an SA2 equivalent are added from
   SADX's files: O GOMBAN (elastic railings), O BGIRO (spike gates),
-  O JPanel (jump panels). The 2P file also gets the O BEWIND updrafts (its
+  O JPanel (jump panels), the orca triggers (O AO SUMMON, O AO KILL,
+  O PO SUMMON). The 2P file also gets the O BEWIND updrafts (its
   older conversion has none).
 
 The object IDs (102+) are the entries LevelTest.cpp appends to City
@@ -41,6 +42,9 @@ NEW_ID = {
     30: 109,  # E SAITO (Rhinotank)
     31: 110,  # E AMEMB (Sweep)
     3: 111,   # O AXPNL (dash panel)
+    67: 112,  # O AO SUMMON (the chasing orca)
+    68: 113,  # O AO KILL (sends it away)
+    69: 114,  # O PO SUMMON (the path orca)
 }
 # SA2 stand-in ID -> the SADX IDs SetConv turned into it.
 STAND_INS = {
@@ -52,7 +56,7 @@ STAND_INS = {
     91: (29,),      # E SARU <- E SARU
     7: (3,),        # dash panel <- O AXPNL
 }
-DROPPED = (60, 38, 18)  # added from SADX
+DROPPED = (60, 38, 18, 67, 68, 69)  # added from SADX
 ADD_2P = (79,)          # missing from the 2P file's conversion
 
 
