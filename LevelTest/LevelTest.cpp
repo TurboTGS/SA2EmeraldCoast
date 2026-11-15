@@ -14,6 +14,7 @@
 #include "LandTableInfo.h"
 #include "ModelInfo.h"
 #include "sa2_2p_api.h"
+#include "sadx_ports_api.h"
 #include <string>
 #include <vector>
 
@@ -40,8 +41,77 @@ TexPackInfo bgtexpacks[] = {
 
 NJS_TEXLIST **copylist = { nullptr };
 
+// ---- SADX Object Ports (sadx_ports_api.h) ------------------------------------
+// With the SADX Object Ports mod installed, Emerald Coast uses its ports of
+// SADX's objects in place of the SA2 stand-ins SetConv chose (and the objects
+// it had to leave out): their entries go after City Escape's object list
+// (IDs 102 on, in kSadxPorts order) and the SET files come from
+// stage13_sadx\ (made by tools/make_sadx_ports_set.py).
+
+// SADX object list names, in ID order from 102 (make_sadx_ports_set.py NEW_ID).
+static const char *const kSadxPorts[] = {
+	"O JUMP",   // 102 launch ramp (was SA2's ramp)
+	"O BEWIND", // 103 updraft (was WIND2)
+	"O GOMBAN", // 104 elastic railing (was left out)
+	"O BGIRO",  // 105 spike gate (was left out)
+	"O IRONB",  // 106 swinging spike ball (was SA2's)
+	"O JPanel", // 107 jump panel (was left out)
+	"E SARU",   // 108 Kiki (was SA2's E SARU)
+	"E SAITO",  // 109 Rhinotank (was E EMI)
+	"E AMEMB",  // 110 Sweep (was a Beetle)
+	"O AXPNL",  // 111 dash panel (was SA2's)
+};
+static const int kCityEscapeObjectCount = 102;
+
+static const SADXPorts_API *sadxPortsApi = nullptr; // found on the first Apply
+static bool sadxPortsChecked = false;
+static bool useSadxPorts = false;          // while Emerald Coast is applied
+static bool sadxPortsTexturesLoaded = false;
+static std::vector<ObjectListEntry> portedObjectList;
+
+static const SADXPorts_API *FindSadxPorts()
+{
+	if (!sadxPortsChecked)
+	{
+		sadxPortsChecked = true;
+		HMODULE dll = GetModuleHandleA("sadx_ports.dll");
+		SADXPorts_GetAPIFunc get = dll ? (SADXPorts_GetAPIFunc)GetProcAddress(dll, "SADXPorts_GetAPI") : nullptr;
+		const SADXPorts_API *api = get ? get() : nullptr;
+		if (api && api->version >= 1)
+			sadxPortsApi = api;
+		PrintDebug("[Emerald Coast] SADX Object Ports %s\n", sadxPortsApi ? "found: using its objects" : "not installed: SA2 stand-ins");
+	}
+	return sadxPortsApi;
+}
+
+static void LoadSadxPortsTextures()
+{
+	if (useSadxPorts && !sadxPortsTexturesLoaded)
+	{
+		// Only our objects' textures: all of the mod's (~1450) on top of
+		// Emerald Coast's own pass SA2's 2048-texture limit (crash in the
+		// texture loader at 0x430AB1). Version 1 has no choice.
+		if (sadxPortsApi->version >= 2)
+			sadxPortsApi->LoadTexturesForObjects(kSadxPorts, (int)(sizeof(kSadxPorts) / sizeof(kSadxPorts[0])));
+		else
+			sadxPortsApi->LoadLevelTextures();
+		sadxPortsTexturesLoaded = true;
+	}
+}
+
+static void FreeSadxPortsTextures()
+{
+	if (sadxPortsTexturesLoaded)
+	{
+		sadxPortsApi->FreeLevelTextures();
+		sadxPortsTexturesLoaded = false;
+	}
+}
+
 void LandManagerHook(int a1, LandTable *a2)
 {
+	// CityEscape_Init: before its SET objects load (LoadSetObject 0x5DCF6C).
+	LoadSadxPortsTextures();
 	LandTableSA2BModels = 0;
 	LoadLandManager(a2);
 }
@@ -399,6 +469,7 @@ void DeInitHook()
 	{
 		WaterRippleFunc_ptr = 0;
 	}
+	FreeSadxPortsTextures();
 }
 
 NJS_TEXLIST *objtexlists[18];
@@ -537,8 +608,12 @@ static void ReplaceStageFiles()
 {
 	swappedFiles.clear();
 	for (const char *format : levelFiles)
+	{
+		// The SET files with SADX Object Ports' objects (IDs 102 on).
+		bool ported = useSadxPorts && (!strcmp(format, "set%04d_s.bin") || !strcmp(format, "set%04d_2p_s.bin"));
 		SwapIn(GamePath(LevelFileName(format, stageLevel).c_str()),
-			modPath + "\\stage13\\" + LevelFileName(format, LevelIDs_CityEscape));
+			modPath + (ported ? "\\stage13_sadx\\" : "\\stage13\\") + LevelFileName(format, LevelIDs_CityEscape));
+	}
 	for (const char *file : stageFiles)
 		SwapIn(GamePath(file), modPath + "\\stage13\\" + file);
 	if (stageLevel == LevelIDs_CityEscape && !OtherReplacement(GamePath(stageMapFile)))
@@ -687,6 +762,33 @@ static void LoadAssets()
 	CaptureStockPositions();
 }
 
+// With SADX Object Ports installed: City Escape's object list plus the ported
+// objects (IDs 102 on). After the stand-in patches below, which stay in place
+// for the IDs the ported SET files no longer use. Returns false (SA2
+// stand-ins kept) if the mod is missing, lacks an object, or another mod
+// changed City Escape's list.
+static bool ApplySadxPorts()
+{
+	const SADXPorts_API *api = FindSadxPorts();
+	if (!api || CityEscape_ObjectList.Count != kCityEscapeObjectCount)
+		return false;
+	std::vector<ObjectListEntry> list(CityEscape_ObjectList.List, CityEscape_ObjectList.List + kCityEscapeObjectCount);
+	for (const char *name : kSadxPorts)
+	{
+		const ObjectListEntry *entry = api->FindObject(name);
+		if (!entry)
+		{
+			PrintDebug("[Emerald Coast] SADX Object Ports has no %s: SA2 stand-ins\n", name);
+			return false;
+		}
+		list.push_back(*entry);
+	}
+	portedObjectList = list;
+	PatchData(&CityEscape_ObjectList.List, portedObjectList.data());
+	PatchData(&CityEscape_ObjectList.Count, (int)portedObjectList.size());
+	return true;
+}
+
 // Turns level 13 into Emerald Coast.
 static void Apply()
 {
@@ -716,6 +818,7 @@ static void Apply()
 	PatchData((NJS_TEXLIST***)0x109E748, static_cast<NJS_TEXLIST**>(objtexlists));
 	PatchCall((void*)0x5DD360, DeInitHook);
 	PatchCall((void*)0x5DD22F, LoadDryLagoon2PCharAnims);
+	useSadxPorts = ApplySadxPorts();
 	// On its own level ID the 2P mod registers the positions (descriptor).
 	if (stageLevel == LevelIDs_CityEscape)
 		RegisterEmeraldCoastPositions();
@@ -728,6 +831,8 @@ static void Revert()
 	if (!applied)
 		return;
 	applied = false;
+	FreeSadxPortsTextures(); // normally freed with the level already
+	useSadxPorts = false;
 	RestoreAllPatches();
 	if (stageLevel == LevelIDs_CityEscape)
 		RegisterStockPositions();
