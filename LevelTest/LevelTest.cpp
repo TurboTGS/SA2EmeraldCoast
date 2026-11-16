@@ -66,6 +66,11 @@ static const char *const kSadxPorts[] = {
 	"O PO SUMMON", // 114 the path orca's trigger (was left out)
 	"O PIER",      // 115 the pier sections the orca breaks (were land: SadxPortsCols.h)
 	"O BIGROCK",   // 116 the big rocks the orca topples (were land)
+	"O DOLPHIN",   // 117 dolphins that leap from the sea (were left out)
+	"O DOLSW",     // 118 the switches that call them (were left out)
+	"O KAMOME",    // 119 seagulls (were left out)
+	"O KAMOMEL",   // 120 seagulls with flapping wings (were left out)
+	"OTTOTTO",     // 121 the edges Sonic teeters on (were left out)
 };
 static const int kCityEscapeObjectCount = 102;
 

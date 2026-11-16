@@ -52,6 +52,11 @@ NEW_ID = {
     69: 114,  # O PO SUMMON (the path orca)
     59: 115,  # O PIER (was baked into the land)
     66: 116,  # O BIGROCK (was baked into the land)
+    53: 117,  # O DOLPHIN
+    75: 118,  # O DOLSW (the dolphins' switch)
+    55: 119,  # O KAMOME (seagull)
+    56: 120,  # O KAMOMEL (seagull)
+    25: 121,  # OTTOTTO (teeter edge)
 }
 # SA2 stand-in ID -> the SADX IDs SetConv turned into it.
 STAND_INS = {
@@ -63,7 +68,7 @@ STAND_INS = {
     91: (29,),      # E SARU <- E SARU
     7: (3,),        # dash panel <- O AXPNL
 }
-DROPPED = (60, 38, 18, 67, 68, 69, 59, 66)  # added from SADX
+DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25)  # added from SADX
 ADD_2P = (79,)          # missing from the 2P file's conversion
 
 
