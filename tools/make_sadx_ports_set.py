@@ -61,6 +61,8 @@ NEW_ID = {
     27: 123,  # O BUBBLE
     28: 124,  # O BUBBLES
     20: 125,  # WALL (SADX's invisible wall, which pushes players out)
+    58: 126,  # O PARASOL (breakable parasols, chairs, tables; were land)
+    39: 127,  # O IWA (bobbing rocks; were land)
 }
 # SA2 stand-in ID -> the SADX IDs SetConv turned into it.
 STAND_INS = {
@@ -73,7 +75,7 @@ STAND_INS = {
     7: (3,),        # dash panel <- O AXPNL
     49: (20,),      # SA2's wall <- WALL
 }
-DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25, 61, 27, 28)  # added from SADX
+DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25, 61, 27, 28, 58, 39)  # added from SADX
 ADD_2P = (79,)          # missing from the 2P file's conversion
 BIG_SKIPPED = (61, 27, 28)  # O ASIATO / O BUBBLE / O BUBBLES of Big's act (SET0102B)
 
@@ -234,7 +236,7 @@ def fix_ring_groups(entries, sadx):
 # Object Ports, O PIER brings its own deck (col_pier) and O BIGROCK its
 # capsule, and both break as the orca reaches them, so LevelTest.cpp clears
 # these entries' flags (nothing drawn, nothing solid) while it uses them.
-BAKED = re.compile(r'^O (PIER|BIGROCK) \d+(_cnk)?$')
+BAKED = re.compile(r'^O (PIER|BIGROCK|PARASOL|IWA) \d+(_cnk)?$')
 BRIDGE_SEGMENTS = ['BridgeSegment%d.sa1mdl' % i for i in range(4)]
 FLOATING_BRIDGE = ['Bridge Model.sa1mdl', 'Bridge Model COL.sa1mdl']
 
