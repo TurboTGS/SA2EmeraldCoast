@@ -290,6 +290,31 @@ void __cdecl InitOceanData(int n)
 	OceanDataArray[n].VBuffIndex = n;
 }
 
+// SADX PC Obj_EC1Water_Display (0x501130), act 0's sea height, once a step
+// (with SADX Object Ports' orcas, LevelTest.cpp): while a ripple lives the
+// ocean bobs at sin(frame << 11) * 3 + 2.5, else it sinks 0.1 a step to -1.5
+// (EmeraldCoastOceanHeight 0x10C85A8, -1.5 at first).
+static float act0SeaHeight = -1.5f;
+
+void EmeraldCoast_ResetAct0Sea()
+{
+	act0SeaHeight = -1.5f;
+}
+
+void EmeraldCoast_Act0Sea(int ripples)
+{
+	if (ripples == 0)
+	{
+		if (-1.5f < act0SeaHeight)
+			act0SeaHeight -= 0.1f;
+	}
+	else
+	{
+		act0SeaHeight = njSin(FrameCountIngame << 11) * 3.0f + 2.5f;
+	}
+	OceanDataArray[0].Position.y = act0SeaHeight;
+}
+
 void __cdecl Obj_EmeraldCoast_InitOceanData()
 {
 	OceanDataArray[0].Position.x = -3000.0;

@@ -15,6 +15,7 @@
 #include "ModelInfo.h"
 #include "sa2_2p_api.h"
 #include "sadx_ports_api.h"
+#include "SadxPortsCols.h"
 #include <string>
 #include <vector>
 
@@ -63,6 +64,8 @@ static const char *const kSadxPorts[] = {
 	"O AO SUMMON", // 112 the chasing orca's trigger (was left out)
 	"O AO KILL",   // 113 sends it away (was left out)
 	"O PO SUMMON", // 114 the path orca's trigger (was left out)
+	"O PIER",      // 115 the pier sections the orca breaks (were land: SadxPortsCols.h)
+	"O BIGROCK",   // 116 the big rocks the orca topples (were land)
 };
 static const int kCityEscapeObjectCount = 102;
 
@@ -792,6 +795,59 @@ static bool ApplySadxPorts()
 	return true;
 }
 
+// The land entries the ported O PIER / O BIGROCK replace (SadxPortsCols.h):
+// flags cleared (not drawn, not solid) while the ported objects are in use.
+static std::vector<std::pair<int, int>> bakedColFlags; // index, flags
+
+static void HideBakedCols()
+{
+	bakedColFlags.clear();
+	int skipped = 0;
+	for (const SadxPortsBakedCol &b : kSadxPortsBakedCols)
+	{
+		if (b.index >= emeraldCoastLand.COLCount)
+		{
+			++skipped;
+			continue;
+		}
+		COL &col = emeraldCoastLand.COLList[b.index];
+		if (fabsf(col.Center.x - b.x) > 0.5f || fabsf(col.Center.y - b.y) > 0.5f || fabsf(col.Center.z - b.z) > 0.5f)
+		{
+			++skipped; // not the entry the header was made from
+			continue;
+		}
+		bakedColFlags.push_back({ b.index, col.Flags });
+		col.Flags = 0;
+	}
+	PrintDebug("[Emerald Coast] SADX Object Ports: %d land entries hidden (pier, big rocks)%s\n", (int)bakedColFlags.size(),
+		skipped ? ", some didn't match LandTable.sa2lvl" : "");
+}
+
+static void RestoreBakedCols()
+{
+	for (const auto &f : bakedColFlags)
+		emeraldCoastLand.COLList[f.first].Flags = f.second;
+	bakedColFlags.clear();
+}
+
+// SADX's act 0 sea task (Obj_EC1Water) with the ported orcas: their ripples
+// stepped each step (API v7), the ocean's height as SADX PC sets it.
+static int seaRipples = 0;
+
+static void StepAct0Sea()
+{
+	if (!applied || !useSadxPorts || !sadxPortsApi || sadxPortsApi->version < 7 || CurrentLevel != stageLevel)
+		return;
+	if (GameState != GameStates_Ingame && GameState != GameStates_Pause)
+		return;
+	EntityData1 *p = MainCharObj1[0];
+	if (!p || p->Position.z < -1000.0f) // act 1 (SADX deletes the task there)
+		return;
+	if (GameState == GameStates_Ingame) // Main: not while paused
+		seaRipples = sadxPortsApi->StepSea();
+	EmeraldCoast_Act0Sea(seaRipples); // Display: also while paused
+}
+
 // Turns level 13 into Emerald Coast.
 static void Apply()
 {
@@ -822,6 +878,10 @@ static void Apply()
 	PatchCall((void*)0x5DD360, DeInitHook);
 	PatchCall((void*)0x5DD22F, LoadDryLagoon2PCharAnims);
 	useSadxPorts = ApplySadxPorts();
+	if (useSadxPorts)
+		HideBakedCols();
+	seaRipples = 0;
+	EmeraldCoast_ResetAct0Sea();
 	// On its own level ID the 2P mod registers the positions (descriptor).
 	if (stageLevel == LevelIDs_CityEscape)
 		RegisterEmeraldCoastPositions();
@@ -835,6 +895,7 @@ static void Revert()
 		return;
 	applied = false;
 	FreeSadxPortsTextures(); // normally freed with the level already
+	RestoreBakedCols();
 	useSadxPorts = false;
 	RestoreAllPatches();
 	if (stageLevel == LevelIDs_CityEscape)
@@ -917,11 +978,13 @@ extern "C"
 	// the 2P mod registered us. If not, replace City Escape for good.
 	__declspec(dllexport) void __cdecl OnFrame()
 	{
-		if (checkedFallback)
-			return;
-		checkedFallback = true;
-		if (!registeredWith2P)
-			Apply();
+		if (!checkedFallback)
+		{
+			checkedFallback = true;
+			if (!registeredWith2P)
+				Apply();
+		}
+		StepAct0Sea();
 	}
 
 	__declspec(dllexport) ModInfo SA2ModInfo = { ModLoaderVer };

@@ -11,6 +11,8 @@ extern NJS_OBJECT *stru_103B37C;
 void __cdecl Obj_EC1Water_Display(ObjectMaster *obj);
 void __cdecl Background_Display(ObjectMaster *obj);
 void __cdecl Obj_EmeraldCoast_InitOceanData();
+void EmeraldCoast_ResetAct0Sea();
+void EmeraldCoast_Act0Sea(int ripples);
 
 struct RenderInfoThing
 {
