@@ -57,6 +57,9 @@ NEW_ID = {
     55: 119,  # O KAMOME (seagull)
     56: 120,  # O KAMOMEL (seagull)
     25: 121,  # OTTOTTO (teeter edge)
+    61: 122,  # O ASIATO (footprints)
+    27: 123,  # O BUBBLE
+    28: 124,  # O BUBBLES
 }
 # SA2 stand-in ID -> the SADX IDs SetConv turned into it.
 STAND_INS = {
@@ -68,8 +71,9 @@ STAND_INS = {
     91: (29,),      # E SARU <- E SARU
     7: (3,),        # dash panel <- O AXPNL
 }
-DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25)  # added from SADX
+DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25, 61, 27, 28)  # added from SADX
 ADD_2P = (79,)          # missing from the 2P file's conversion
+BIG_SKIPPED = (61, 27, 28)  # O ASIATO / O BUBBLE / O BUBBLES of Big's act (SET0102B)
 
 
 def read_sadx(path, dz=0.0):
@@ -132,7 +136,7 @@ def convert(base, sadx, extra_ids):
         replaced[s['id']] = replaced.get(s['id'], 0) + 1
     added = {}
     for s in sadx:
-        if s['id'] in extra_ids:
+        if s['id'] in extra_ids and not (s.get('big') and s['id'] in BIG_SKIPPED):
             # SADX's clip-level bits (1, 2) aren't SA2's; keep bit 8 as SetConv did.
             out.append({'id': NEW_ID[s['id']], 'flags': s['flags'] & 8, 'rot': s['rot'],
                         'pos': s['pos'], 'scl': s['scl']})
@@ -288,8 +292,10 @@ def main():
     ap.add_argument('--sadx', default=STEAM)
     args = ap.parse_args()
     system = os.path.join(args.sadx, 'system')
-    sadx = (read_sadx(os.path.join(system, 'SET0100S.BIN')) +
-            read_sadx(os.path.join(system, 'SET0102B.BIN')) +
+    big = read_sadx(os.path.join(system, 'SET0102B.BIN'))
+    for s in big:
+        s['big'] = True  # Big's act: its footprints and bubbles aren't in the port's land
+    sadx = (read_sadx(os.path.join(system, 'SET0100S.BIN')) + big +
             read_sadx(os.path.join(system, 'SET0101S.BIN'), -2000.0))
     for name, extra in (('set0013_s.bin', DROPPED), ('set0013_2p_s.bin', DROPPED + ADD_2P)):
         base = read_sa2(os.path.join(DIST, 'stage13', name))

@@ -71,6 +71,9 @@ static const char *const kSadxPorts[] = {
 	"O KAMOME",    // 119 seagulls (were left out)
 	"O KAMOMEL",   // 120 seagulls with flapping wings (were left out)
 	"OTTOTTO",     // 121 the edges Sonic teeters on (were left out)
+	"O ASIATO",    // 122 Sonic's footprints in the sand (were left out)
+	"O BUBBLE",    // 123 the air bubble spout (were left out)
+	"O BUBBLES",   // 124 rising bubbles (were left out)
 };
 static const int kCityEscapeObjectCount = 102;
 
