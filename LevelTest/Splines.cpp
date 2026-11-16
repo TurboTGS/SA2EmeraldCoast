@@ -1049,7 +1049,11 @@ LoopHead *PathList_EmeraldCoast0[] = {
 	//&PathList_EmeraldCoast1_4,
 	//&PathList_EmeraldCoast1_5,
 	//&PathList_EmeraldCoast1_6,
-	//&PathList_ECSlope,
+	// Act 2's big slope (2958, 0, -4077) to (2890, 300, -4217): SA2's
+	// collision lets Sonic go off it at y ~150 (speed 10.4 -> 1.2 in five
+	// frames) where SADX's keeps him on, so he couldn't get past it (SA2_1P_in_2P
+	// test, sadx_ports.log). Commented out since the 2018 release; back on, on trial.
+	&PathList_ECSlope,
 	nullptr
 };
 
