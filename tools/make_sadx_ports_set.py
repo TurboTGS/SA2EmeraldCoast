@@ -60,6 +60,7 @@ NEW_ID = {
     61: 122,  # O ASIATO (footprints)
     27: 123,  # O BUBBLE
     28: 124,  # O BUBBLES
+    20: 125,  # WALL (SADX's invisible wall, which pushes players out)
 }
 # SA2 stand-in ID -> the SADX IDs SetConv turned into it.
 STAND_INS = {
@@ -70,6 +71,7 @@ STAND_INS = {
     57: (30,),      # E EMI <- E SAITO
     91: (29,),      # E SARU <- E SARU
     7: (3,),        # dash panel <- O AXPNL
+    49: (20,),      # SA2's wall <- WALL
 }
 DROPPED = (60, 38, 18, 67, 68, 69, 59, 66, 53, 75, 55, 56, 25, 61, 27, 28)  # added from SADX
 ADD_2P = (79,)          # missing from the 2P file's conversion
@@ -234,6 +236,7 @@ def fix_ring_groups(entries, sadx):
 # these entries' flags (nothing drawn, nothing solid) while it uses them.
 BAKED = re.compile(r'^O (PIER|BIGROCK) \d+(_cnk)?$')
 BRIDGE_SEGMENTS = ['BridgeSegment%d.sa1mdl' % i for i in range(4)]
+FLOATING_BRIDGE = ['Bridge Model.sa1mdl', 'Bridge Model COL.sa1mdl']
 
 
 def sa2lvl_cols(path):
@@ -284,7 +287,17 @@ def write_baked_cols(header):
         for i, (x, y, z), name in rows:
             f.write('\t{ %d, %.3ff, %.3ff, %.3ff }, // %s\n' % (i, x, y, z, name))
         f.write('};\n')
-    return len(rows)
+        # The floating bridge, fixed in the land (SetConv's Bridge Model / COL):
+        # SADX Object Ports API 8 brings SADX's, riding the sea.
+        bridge = {first_object_label(os.path.join(HERE, '..', f)) for f in FLOATING_BRIDGE}
+        brows = [(i, c, name) for i, c, name in sa2lvl_cols(os.path.join(DIST, 'LandTable.sa2lvl'))
+                 if name.replace('_cnk', '') in bridge]
+        f.write('\n// The floating bridge (Bridge Model, Bridge Model COL): hidden with API 8.\n'
+                'static const SadxPortsBakedCol kSadxPortsBridgeCols[] = {\n')
+        for i, (x, y, z), name in brows:
+            f.write('\t{ %d, %.3ff, %.3ff, %.3ff }, // %s\n' % (i, x, y, z, name))
+        f.write('};\n')
+    return len(rows) + len(brows)
 
 
 def main():

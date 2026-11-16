@@ -74,6 +74,7 @@ static const char *const kSadxPorts[] = {
 	"O ASIATO",    // 122 Sonic's footprints in the sand (were left out)
 	"O BUBBLE",    // 123 the air bubble spout (were left out)
 	"O BUBBLES",   // 124 rising bubbles (were left out)
+	"WALL",        // 125 SADX's invisible wall, which pushes players out (was SA2's wall)
 };
 static const int kCityEscapeObjectCount = 102;
 
@@ -811,7 +812,11 @@ static void HideBakedCols()
 {
 	bakedColFlags.clear();
 	int skipped = 0;
-	for (const SadxPortsBakedCol &b : kSadxPortsBakedCols)
+	std::vector<SadxPortsBakedCol> hide(std::begin(kSadxPortsBakedCols), std::end(kSadxPortsBakedCols));
+	// API 8: SADX's floating bridge (planks riding the sea) replaces the fixed one
+	if (sadxPortsApi && sadxPortsApi->version >= 8)
+		hide.insert(hide.end(), std::begin(kSadxPortsBridgeCols), std::end(kSadxPortsBridgeCols));
+	for (const SadxPortsBakedCol &b : hide)
 	{
 		if (b.index >= emeraldCoastLand.COLCount)
 		{

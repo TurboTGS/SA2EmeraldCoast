@@ -139,3 +139,9 @@ static const SadxPortsBakedCol kSadxPortsBakedCols[] = {
 	{ 2266, 4552.840f, 11.199f, 1757.034f }, // object_8D6180B12BB21C4106E
 	{ 2267, 4769.263f, 10.842f, 1162.250f }, // object_8D6180B1B93015A9A24
 };
+
+// The floating bridge (Bridge Model, Bridge Model COL): hidden with API 8.
+static const SadxPortsBakedCol kSadxPortsBridgeCols[] = {
+	{ 1432, 3377.979f, 15.631f, 365.000f }, // object_8D61731D8CEEAD33281_cnk
+	{ 2263, 3415.666f, 10.506f, 366.294f }, // object_8D6173DAB1FFD5A81D9
+};

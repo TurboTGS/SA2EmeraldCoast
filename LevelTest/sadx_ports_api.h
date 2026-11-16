@@ -23,6 +23,8 @@
  *    it is freed. The ported objects draw with these
  *    textures; free also stops the objects' sounds.
  *  - StepSea (version 7): Emerald Coast act 0's sea ripples (the orcas).
+ *    From version 8 it also makes act 0's floating bridge (planks riding the
+ *    sea), so the stage hides its fixed one.
  *  - MSetPosition (version 3): SADX's ball sweep against the level (sonic.exe
  *    0x43A030), on SA2's collision, for code ported from SADX that calls it
  *    (e.g. the path cameras' wall stop).
@@ -30,7 +32,7 @@
  * Needs SA2ModLoader.h included first (ObjectListEntry).
  */
 
-#define SADXPORTS_API_VERSION 7
+#define SADXPORTS_API_VERSION 8
 
 /* Version 4: a SADX path (LoopHead): ends 0 stop / 1 loop, the points
    (SADX Loop: Sint16 ang x, ang z, float length to the next, position). */
