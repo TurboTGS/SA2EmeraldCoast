@@ -77,6 +77,7 @@ static const char *const kSadxPorts[] = {
 	"WALL",        // 125 SADX's invisible wall, which pushes players out (was SA2's wall)
 	"O PARASOL",   // 126 breakable parasols, chairs and tables (were land: SadxPortsCols.h)
 	"O IWA",       // 127 rocks that bob under Sonic (were land)
+	"O TAKI",      // 128 waterfalls, their texture sliding (were land)
 };
 static const int kCityEscapeObjectCount = 102;
 
